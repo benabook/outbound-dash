@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>January 2026 Outbound Pipeline Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+    <style>
+        :root {
+            --bg-primary: #f0f4f8;
+            --bg-card: #ffffff;
+            --bg-header: #1e3a5f;
+            --text-primary: #1a202c;
+            --text-secondary: #64748b;
+            --text-on-dark: #ffffff;
+            --color-ben: #3b82f6;
+            --color-adrian: #8b5cf6;
+            --color-mel: #ec4899;
+            --color-academy: #10b981;
+            --color-boardroom: #f59e0b;
+            --color-gaw: #ec4899;
+            --positive: #22c55e;
+            --negative: #ef4444;
+            --gap: 20px;
+            --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        .dashboard-container { max-width: 1600px; margin: 0 auto; padding: var(--gap); }
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--bg-header) 0%, #2d5a87 100%);
+            color: var(--text-on-dark);
+            padding: 24px 32px;
+            border-radius: var(--radius);
+            margin-bottom: var(--gap);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .header-left h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .header-left p { font-size: 14px; opacity: 0.85; }
+        .header-right { text-align: right; }
+        .total-rev { font-size: 32px; font-weight: 700; color: #4ade80; }
+        .total-label { font-size: 12px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+        .filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+        .filter-group { display: flex; align-items: center; gap: 6px; }
+        .filter-group label { font-size: 12px; color: rgba(255,255,255,0.7); }
+        .filter-group select {
+            padding: 6px 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .filter-group select option { background: var(--bg-header); color: white; }
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: var(--gap);
+            margin-bottom: var(--gap);
+        }
+        .kpi-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .kpi-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 6px; }
+        .kpi-value { font-size: 28px; font-weight: 700; color: var(--text-primary); }
+        .kpi-subtext { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+        .section-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; padding-left: 4px; }
+        .bdr-section {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--gap);
+            margin-bottom: var(--gap);
+        }
+        .bdr-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .bdr-card.ben { border-top: 4px solid var(--color-ben); }
+        .bdr-card.adrian { border-top: 4px solid var(--color-adrian); }
+        .bdr-card.mel { border-top: 4px solid var(--color-mel); }
+        .bdr-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .bdr-name { font-size: 16px; font-weight: 700; }
+        .bdr-revenue { font-size: 22px; font-weight: 700; color: var(--positive); }
+        .bdr-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .bdr-stat { padding: 10px; background: var(--bg-primary); border-radius: 8px; }
+        .bdr-stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; }
+        .bdr-stat-value { font-size: 18px; font-weight: 600; margin-top: 2px; }
+        .product-breakdown { margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+        .product-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; }
+        .product-label { display: flex; align-items: center; gap: 6px; }
+        .product-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .product-dot.academy { background: var(--color-academy); }
+        .product-dot.boardroom { background: var(--color-boardroom); }
+        .product-dot.gaw { background: var(--color-gaw); }
+        .product-value { font-weight: 600; }
+        .ae-section {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--gap);
+            margin-bottom: var(--gap);
+        }
+        .ae-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 18px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .ae-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
+        .ae-stat-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 12px; border-bottom: 1px solid #f1f5f9; }
+        .ae-stat-row:last-child { border-bottom: none; }
+        .ae-stat-label { color: var(--text-secondary); }
+        .ae-stat-value { font-weight: 600; }
+        .chart-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: var(--gap);
+            margin-bottom: var(--gap);
+        }
+        .chart-container {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .chart-container h3 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px; }
+        .chart-container canvas { max-height: 280px; }
+        .table-section {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: var(--gap);
+            overflow-x: auto;
+        }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .data-table thead th {
+            text-align: left;
+            padding: 10px 8px;
+            border-bottom: 2px solid #e2e8f0;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .data-table thead th:hover { color: var(--text-primary); background: #f8fafc; }
+        .data-table tbody td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; }
+        .data-table tbody tr:hover { background: #f8fafc; }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .badge.ben { background: #dbeafe; color: #1d4ed8; }
+        .badge.adrian { background: #ede9fe; color: #6d28d9; }
+        .badge.mel { background: #fce7f3; color: #be185d; }
+        .badge.academy { background: #d1fae5; color: #065f46; }
+        .badge.boardroom { background: #fef3c7; color: #92400e; }
+        .badge.gaw { background: #fce7f3; color: #9d174d; }
+        .badge.closed-won { background: #dcfce7; color: #166534; }
+        .badge.closed-lost { background: #fee2e2; color: #991b1b; }
+        .badge.no-show { background: #fef3c7; color: #92400e; }
+        .badge.negotiation { background: #dbeafe; color: #1e40af; }
+        .badge.discovery { background: #e0e7ff; color: #3730a3; }
+        .badge.meeting-scheduled { background: #f3e8ff; color: #6b21a8; }
+        .badge.meeting-completed { background: #d1fae5; color: #065f46; }
+        .badge.commit { background: #cffafe; color: #0e7490; }
+        .badge.future-opportunity { background: #f1f5f9; color: #475569; }
+        .badge.ae-mel { background: #dbeafe; color: #1e40af; }
+        .badge.ae-preston { background: #fef3c7; color: #92400e; }
+        .badge.ae-dani { background: #f3e8ff; color: #7c3aed; }
+        .badge.ae-alex { background: #d1fae5; color: #065f46; }
+        .badge.ae-ben { background: #dbeafe; color: #1d4ed8; }
+        .badge.ae-adrian { background: #f1f5f9; color: #475569; }
+        .footer { text-align: center; padding: 16px; color: var(--text-secondary); font-size: 12px; }
+        @media (max-width: 1000px) {
+            .bdr-section { grid-template-columns: 1fr; }
+            .ae-section { grid-template-columns: repeat(2, 1fr); }
+            .chart-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="header-left">
+                <h1>January 2026 Outbound Pipeline</h1>
+                <p>Academy, Boardroom & GAW Performance</p>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>BDR</label>
+                        <select id="filter-bdr" onchange="dashboard.applyFilters()">
+                            <option value="all">All BDRs</option>
+                            <option value="Ben Averbook">Ben</option>
+                            <option value="Adrian Delaney">Adrian</option>
+                            <option value="Mel Fox">Mel (Self-Set)</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>AE</label>
+                        <select id="filter-ae" onchange="dashboard.applyFilters()">
+                            <option value="all">All AEs</option>
+                            <option value="Mel Fox">Mel Fox</option>
+                            <option value="Preston Palmer">Preston Palmer</option>
+                            <option value="Dani Ruadez">Dani Ruadez</option>
+                            <option value="Alex Chavez">Alex Chavez</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Product</label>
+                        <select id="filter-product" onchange="dashboard.applyFilters()">
+                            <option value="all">All Products</option>
+                            <option value="Academy">Academy</option>
+                            <option value="Boardroom">Boardroom</option>
+                            <option value="GAW">GAW</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Stage</label>
+                        <select id="filter-stage" onchange="dashboard.applyFilters()">
+                            <option value="all">All Stages</option>
+                            <option value="Closed Won">Closed Won</option>
+                            <option value="Closed Lost">Closed Lost</option>
+                            <option value="No Show">No Show</option>
+                            <option value="Negotiation">Negotiation</option>
+                            <option value="Discovery">Discovery</option>
+                            <option value="Meeting Scheduled">Meeting Scheduled</option>
+                            <option value="Meeting Completed">Meeting Completed</option>
+                            <option value="Future Opportunity">Future Opportunity</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="total-label">Total Outbound Revenue</div>
+                <div class="total-rev" id="total-revenue">$185,250</div>
+            </div>
+        </header>
+
+        <section class="kpi-row">
+            <div class="kpi-card">
+                <div class="kpi-label">Meetings Booked</div>
+                <div class="kpi-value" id="kpi-meetings">104</div>
+                <div class="kpi-subtext">January 2026</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Deals Closed</div>
+                <div class="kpi-value" id="kpi-deals-won">20</div>
+                <div class="kpi-subtext" id="kpi-revenue">$185,250</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Show Rate</div>
+                <div class="kpi-value" id="kpi-show-rate">78%</div>
+                <div class="kpi-subtext" id="kpi-no-shows">23 no shows</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Close Rate</div>
+                <div class="kpi-value" id="kpi-close-rate">19.2%</div>
+                <div class="kpi-subtext">Of meetings booked</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Avg Deal Size</div>
+                <div class="kpi-value" id="kpi-avg-deal">$9,263</div>
+                <div class="kpi-subtext">Closed won</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Active Pipeline</div>
+                <div class="kpi-value" id="kpi-pipeline">$312K</div>
+                <div class="kpi-subtext" id="kpi-active">30 deals</div>
+            </div>
+        </section>
+
+        <h2 class="section-title">BDR Performance</h2>
+        <section class="bdr-section">
+            <div class="bdr-card ben">
+                <div class="bdr-header">
+                    <span class="bdr-name">Ben Averbook</span>
+                    <span class="bdr-revenue" id="ben-revenue">$84,650</span>
+                </div>
+                <div class="bdr-stats">
+                    <div class="bdr-stat">
+                        <div class="bdr-stat-label">Meetings</div>
+                        <div class="bdr-stat-value" id="ben-meetings">59</div>
+                    </div>
+                    <div class="bdr-stat">
+                        <div class="bdr-stat-label">Show Rate</div>
+                        <div class="bdr-stat-value" id="ben-show-rate">71%</div>
+                    </div>
+                    <div class="bdr-stat">
+                        <div class="bdr-stat-label">Closed Won</div>
+                        <div class="bdr-stat-value" id="ben-won">13</div>
+                    </div>
+                    <div class="bdr-stat">
+                        <div class="bdr-stat-label">Close Rate</div>
+                        <div class="bdr-stat-value" id="ben-close-rate">22%</div>
+                    </div>
+                </div>
+                <div class="product-breakdown">
+                    <div class="product-row">
+                        <span class="product-label"><span class="product-dot academy"></span>Academy</span>
+                        <span class="product-value" id="ben-academy">$53,400</span>
+                    </div>
+                    <div class="product-row">
+                        <span class="product-label"><span class="product-dot boardroom"></span>Boardroom</span>
+                        <span class="product-value" id="ben-boardroom">$12,000</span>
+                    </div>
+                    <div class="product-row">
+                        <span class="product-label"><span class="product-dot gaw"></span>GAW</span>
+                        <span class="product-value" id="ben-gaw">$9,750</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bdr-card adrian">
+                <div class="bdr-header">
+                    <span class="bdr-name">Adrian Delaney</span>
+                    <span class="bdr-revenue" id="adrian-revenue">$88,600</span>
+                </div>
+                <div class="bdr-stats">
+                    <div class="bdr-stat">
+                        <div class="bdr-stat-label">Meetings</div>
+                        <div class="bdr-stat-value" id="adrian-meetings">44</div>
+                    </div>
+                    <div class="bdr-stat">
+                        <div class="bdr-stat-label">Show Rate</div>
+                        <div class="bdr-stat-value" id="adrian-show-rate">84%</div>
+                    </div>
+                    <div class="bdr-stat">
+                        <div class="bdr-stat-label">Closed Won</div>
+                        <div class="bdr-stat-value" id="adrian-won">8</div>
+                    </div>
+                    <div class="bdr-stat">
+                        <div class="bdr-stat-label">Close Rate</div>
+                        <div class="bdr-stat-value" id="adrian-close-rate">18%</div>
+                    </div>
+                </div>
+                <div class="product-breakdown">
+                    <div class="product-row">
+                        <span class="product-label"><span class="product-dot academy"></span>Academy</span>
+                        <span class="product-value" id="adrian-academy">$28,600</span>
+                    </div>
+                    <div class="product-row">
+                        <span class="product-label"><span class="product-dot boardroom"></span>Boardroom</span>
+                        <span class="product-value" id="adrian-boardroom">$60,000</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bdr-card mel">
+                <div class="bdr-header">
+                    <span class="bdr-name">Mel Fox (Self-Set)</span>
+                    <span class="bdr-revenue" id="mel-revenue">$12,000</span>
+                </div>
+                <div class="bdr-stats">
+                    <div class="bdr-stat">
+                        <div class="bdr-stat-label">Meetings</div>
+                        <div class="bdr-stat-value" id="mel-meetings">1</div>
+                    </div>
+                    <div class="bdr-stat">
+                        <div class="bdr-stat-label">Show Rate</div>
+                        <div class="bdr-stat-value" id="mel-show-rate">100%</div>
+                    </div>
+                    <div class="bdr-stat">
+                        <div class="bdr-stat-label">Closed Won</div>
+                        <div class="bdr-stat-value" id="mel-won">1</div>
+                    </div>
+                    <div class="bdr-stat">
+                        <div class="bdr-stat-label">Close Rate</div>
+                        <div class="bdr-stat-value" id="mel-close-rate">100%</div>
+                    </div>
+                </div>
+                <div class="product-breakdown">
+                    <div class="product-row">
+                        <span class="product-label"><span class="product-dot boardroom"></span>Boardroom</span>
+                        <span class="product-value" id="mel-boardroom">$12,000</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <h2 class="section-title">AE Distribution</h2>
+        <section class="ae-section">
+            <div class="ae-card">
+                <h4>Mel Fox</h4>
+                <div class="ae-stat-row"><span class="ae-stat-label">Assigned</span><span class="ae-stat-value" id="ae-mel-assigned">17</span></div>
+                <div class="ae-stat-row"><span class="ae-stat-label">Completed</span><span class="ae-stat-value" id="ae-mel-completed">12</span></div>
+                <div class="ae-stat-row"><span class="ae-stat-label">Closed Won</span><span class="ae-stat-value" id="ae-mel-won">5</span></div>
+                <div class="ae-stat-row"><span class="ae-stat-label">Revenue</span><span class="ae-stat-value" id="ae-mel-rev">$42,200</span></div>
+            </div>
+            <div class="ae-card">
+                <h4>Preston Palmer</h4>
+                <div class="ae-stat-row"><span class="ae-stat-label">Assigned</span><span class="ae-stat-value" id="ae-preston-assigned">23</span></div>
+                <div class="ae-stat-row"><span class="ae-stat-label">Completed</span><span class="ae-stat-value" id="ae-preston-completed">13</span></div>
+                <div class="ae-stat-row"><span class="ae-stat-label">Closed Won</span><span class="ae-stat-value" id="ae-preston-won">4</span></div>
+                <div class="ae-stat-row"><span class="ae-stat-label">Revenue</span><span class="ae-stat-value" id="ae-preston-rev">$43,100</span></div>
+            </div>
+            <div class="ae-card">
+                <h4>Dani Ruadez</h4>
+                <div class="ae-stat-row"><span class="ae-stat-label">Assigned</span><span class="ae-stat-value" id="ae-dani-assigned">26</span></div>
+                <div class="ae-stat-row"><span class="ae-stat-label">Completed</span><span class="ae-stat-value" id="ae-dani-completed">19</span></div>
+                <div class="ae-stat-row"><span class="ae-stat-label">Closed Won</span><span class="ae-stat-value" id="ae-dani-won">5</span></div>
+                <div class="ae-stat-row"><span class="ae-stat-label">Revenue</span><span class="ae-stat-value" id="ae-dani-rev">$37,500</span></div>
+            </div>
+            <div class="ae-card">
+                <h4>Alex Chavez</h4>
+                <div class="ae-stat-row"><span class="ae-stat-label">Assigned</span><span class="ae-stat-value" id="ae-alex-assigned">34</span></div>
+                <div class="ae-stat-row"><span class="ae-stat-label">Completed</span><span class="ae-stat-value" id="ae-alex-completed">26</span></div>
+                <div class="ae-stat-row"><span class="ae-stat-label">Closed Won</span><span class="ae-stat-value" id="ae-alex-won">5</span></div>
+                <div class="ae-stat-row"><span class="ae-stat-label">Revenue</span><span class="ae-stat-value" id="ae-alex-rev">$52,800</span></div>
+            </div>
+        </section>
+
+        <section class="chart-row">
+            <div class="chart-container">
+                <h3>Deal Stage Distribution</h3>
+                <canvas id="stage-chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Revenue by Product</h3>
+                <canvas id="product-chart"></canvas>
+            </div>
+        </section>
+
+        <section class="chart-row">
+            <div class="chart-container">
+                <h3>BDR Revenue Comparison</h3>
+                <canvas id="bdr-chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>AE Performance</h3>
+                <canvas id="ae-chart"></canvas>
+            </div>
+        </section>
+
+        <h2 class="section-title">Deal Details</h2>
+        <section class="table-section">
+            <table class="data-table" id="deals-table">
+                <thead>
+                    <tr>
+                        <th onclick="dashboard.sortTable('name')">Deal Name</th>
+                        <th onclick="dashboard.sortTable('rep')">BDR</th>
+                        <th onclick="dashboard.sortTable('ae')">AE</th>
+                        <th onclick="dashboard.sortTable('product')">Product</th>
+                        <th onclick="dashboard.sortTable('stage')">Stage</th>
+                        <th onclick="dashboard.sortTable('amount')">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="deals-tbody"></tbody>
+            </table>
+        </section>
+
+        <footer class="footer">
+            January 2026 Outbound Pipeline | Ben: $84,650 | Adrian: $88,600 | Mel: $12,000 | Total: $185,250
+        </footer>
+    </div>
+
+    <script>
+        const DATA = [{"id":"55031422491","name":"Brian Seims","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Academy","stage":"Meeting Scheduled","amount":11000,"created":"2026-01-21","days":4},{"id":"55031417997","name":"Arif Chawalwala","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Academy","stage":"Meeting Scheduled","amount":11000,"created":"2026-01-21","days":0},{"id":"55034921011","name":"Jacqueline Williams","rep":"Ben Averbook","ae":"Alex Chavez","product":"Academy","stage":"Negotiation","amount":9500,"created":"2026-01-21","days":1},{"id":"54964291617","name":"Garon Graves","rep":"Adrian Delaney","ae":"Dani Ruadez","product":"Academy","stage":"Closed Lost","amount":11000,"created":"2026-01-15","days":1},{"id":"54956503675","name":"Manuel Rodriguez","rep":"Adrian Delaney","ae":"Dani Ruadez","product":"Academy","stage":"Meeting Scheduled","amount":11000,"created":"2026-01-21","days":3},{"id":"54956747959","name":"Kelly Mankin","rep":"Adrian Delaney","ae":"Mel Fox","product":"Academy","stage":"Negotiation","amount":2000,"created":"2026-01-15","days":1},{"id":"54956560445","name":"Leah Lax","rep":"Adrian Delaney","ae":"Preston Palmer","product":"Academy","stage":"Meeting Scheduled","amount":9500,"created":"2026-01-15","days":1},{"id":"54729443639","name":"Nankel Solorzano","rep":"Adrian Delaney","ae":"Dani Ruadez","product":"Academy","stage":"Negotiation","amount":11000,"created":"2026-01-21","days":2},{"id":"54615935415","name":"Mark Johnson","rep":"Ben Averbook","ae":"Alex Chavez","product":"Academy","stage":"Closed Won","amount":9600,"created":"2026-01-21","days":1},{"id":"54616052350","name":"Brook Poplawski","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Academy","stage":"Discovery","amount":11000,"created":"2026-01-21","days":3},{"id":"54615862333","name":"Christos Sofianopoulos","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Academy","stage":"Closed Won","amount":9500,"created":"2026-01-21","days":0},{"id":"54615984293","name":"Lauren Nagler","rep":"Adrian Delaney","ae":"Preston Palmer","product":"Academy","stage":"Meeting Scheduled","amount":11000,"created":"2026-01-21","days":5},{"id":"54608984595","name":"Gary Neilson","rep":"Adrian Delaney","ae":"Preston Palmer","product":"Academy","stage":"No Show","amount":11000,"created":"2026-01-21","days":1},{"id":"54421294175","name":"Bruce Drake","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Academy","stage":"Closed Won","amount":9600,"created":"2026-01-21","days":7},{"id":"54403687498","name":"Bobby Hall","rep":"Ben Averbook","ae":"Preston Palmer","product":"Academy","stage":"Closed Won","amount":9500,"created":"2026-01-21","days":4},{"id":"54421291169","name":"Amaury Arias","rep":"Ben Averbook","ae":"Alex Chavez","product":"Academy","stage":"No Show","amount":9500,"created":"2026-01-21","days":1},{"id":"54401863289","name":"Lucy Espinoza","rep":"Adrian Delaney","ae":"Dani Ruadez","product":"Academy","stage":"Discovery","amount":9500,"created":"2026-01-21","days":60},{"id":"54319926593","name":"Joel Brooksby","rep":"Ben Averbook","ae":"Dani Ruadez","product":"Academy","stage":"No Show","amount":9500,"created":"2026-01-21","days":1},{"id":"54355414539","name":"Sandra Morales","rep":"Ben Averbook","ae":"Dani Ruadez","product":"Academy","stage":"Closed Lost","amount":9500,"created":"2026-01-21","days":1},{"id":"54355424097","name":"Hamish Patterson","rep":"Ben Averbook","ae":"Dani Ruadez","product":"Academy","stage":"Closed Lost","amount":9500,"created":"2026-01-21","days":1},{"id":"54358507850","name":"Ivy Losey","rep":"Ben Averbook","ae":"Mel Fox","product":"Academy","stage":"Discovery","amount":8250,"created":"2026-01-21","days":1},{"id":"54354375831","name":"Jesse Delacruz","rep":"Adrian Delaney","ae":"Mel Fox","product":"Academy","stage":"No Show","amount":11000,"created":"2026-01-21","days":1},{"id":"54347281944","name":"Daniel Wilczynski","rep":"Ben Averbook","ae":"Dani Ruadez","product":"Academy","stage":"Closed Won","amount":2000,"created":"2026-01-21","days":2},{"id":"54353337248","name":"Wutichai Chanhong","rep":"Ben Averbook","ae":"Alex Chavez","product":"Academy","stage":"Discovery","amount":9500,"created":"2026-01-21","days":1},{"id":"54351305474","name":"Slava Monastyrskiy","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Academy","stage":"Discovery","amount":11000,"created":"2026-01-21","days":1},{"id":"54319917951","name":"Adnan Chowdhury","rep":"Ben Averbook","ae":"Mel Fox","product":"Academy","stage":"Future Opportunity","amount":9500,"created":"2026-01-21","days":122},{"id":"54324176470","name":"Mandie Freyta","rep":"Adrian Delaney","ae":"Dani Ruadez","product":"Academy","stage":"No Show","amount":9500,"created":"2026-01-21","days":0},{"id":"54317852281","name":"Osvaldo Garcia","rep":"Adrian Delaney","ae":"Dani Ruadez","product":"Academy","stage":"Future Opportunity","amount":11000,"created":"2026-01-15","days":1},{"id":"54128059478","name":"Victor Brown","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Academy","stage":"Meeting Scheduled","amount":9500,"created":"2026-01-14","days":1},{"id":"54050142072","name":"Jennifer Watts","rep":"Adrian Delaney","ae":"Dani Ruadez","product":"Academy","stage":"Closed Lost","amount":9500,"created":"2026-01-15","days":1},{"id":"54101225858","name":"Marianna Ravitz","rep":"Ben Averbook","ae":"Alex Chavez","product":"Academy","stage":"Discovery","amount":11000,"created":"2026-01-14","days":1},{"id":"54011028245","name":"Carl Rubidge","rep":"Adrian Delaney","ae":"Adrian Delaney","product":"Academy","stage":"No Show","amount":9600,"created":"2026-01-14","days":1},{"id":"53999291705","name":"Lizzie Bowles","rep":"Ben Averbook","ae":"Alex Chavez","product":"Academy","stage":"Negotiation","amount":9500,"created":"2026-01-15","days":1},{"id":"53886995518","name":"Tiffany Pineda","rep":"Ben Averbook","ae":"Mel Fox","product":"Academy","stage":"Closed Won","amount":9500,"created":"2026-01-21","days":8},{"id":"53697309479","name":"Brian Anderson","rep":"Ben Averbook","ae":"Dani Ruadez","product":"Academy","stage":"Discovery","amount":11000,"created":"2026-01-15","days":14},{"id":"53720643989","name":"Lynn Williams","rep":"Ben Averbook","ae":"Dani Ruadez","product":"Academy","stage":"Closed Won","amount":2000,"created":"2026-01-15","days":14},{"id":"53696881797","name":"Nathan Leishman","rep":"Ben Averbook","ae":"Mel Fox","product":"Academy","stage":"Closed Won","amount":1500,"created":"2026-01-15","days":0},{"id":"53696412833","name":"Rachel Cardoso","rep":"Ben Averbook","ae":"Mel Fox","product":"Academy","stage":"Closed Lost","amount":11000,"created":"2026-01-15","days":0},{"id":"53500175944","name":"Mackenzie Stark","rep":"Ben Averbook","ae":"Alex Chavez","product":"Academy","stage":"Closed Lost","amount":9500,"created":"2026-01-15","days":1},{"id":"53444037672","name":"Michael Olivares","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Academy","stage":"Closed Lost","amount":12000,"created":"2026-01-15","days":1},{"id":"53441981506","name":"Michelle He","rep":"Adrian Delaney","ae":"Dani Ruadez","product":"Academy","stage":"Closed Won","amount":9500,"created":"2026-01-15","days":14},{"id":"53434741044","name":"Yumei Chen","rep":"Ben Averbook","ae":"Mel Fox","product":"Academy","stage":"No Show","amount":11000,"created":"2026-01-15","days":1},{"id":"53443943528","name":"May Davis","rep":"Adrian Delaney","ae":"Preston Palmer","product":"Academy","stage":"No Show","amount":9500,"created":"2026-01-15","days":1},{"id":"53434906205","name":"Chris Deitche","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Academy","stage":"Future Opportunity","amount":9500,"created":"2026-01-15","days":1},{"id":"53441958741","name":"Suzie Austin","rep":"Ben Averbook","ae":"Preston Palmer","product":"Academy","stage":"Closed Lost","amount":11000,"created":"2026-01-15","days":22},{"id":"53393661500","name":"Gopal Pagarani","rep":"Ben Averbook","ae":"Alex Chavez","product":"Academy","stage":"Future Opportunity","amount":11000,"created":"2026-01-15","days":14},{"id":"53387886218","name":"Thenamudhan K.","rep":"Ben Averbook","ae":"Mel Fox","product":"Academy","stage":"Closed Won","amount":9600,"created":"2026-01-21","days":7},{"id":"53265176711","name":"Clifton Staub","rep":"Ben Averbook","ae":"Alex Chavez","product":"Academy","stage":"No Show","amount":11000,"created":"2026-01-15","days":1},{"id":"53358439170","name":"Ozzy Isabu","rep":"Ben Averbook","ae":"Alex Chavez","product":"Academy","stage":"Future Opportunity","amount":9500,"created":"2026-01-15","days":21},{"id":"53353943645","name":"Jeff Holmes","rep":"Ben Averbook","ae":"Preston Palmer","product":"Academy","stage":"Closed Won","amount":9600,"created":"2026-01-15","days":18},{"id":"53014732966","name":"Richard Joplin","rep":"Ben Averbook","ae":"Alex Chavez","product":"Academy","stage":"Discovery","amount":11000,"created":"2026-01-15","days":1},{"id":"53259523332","name":"Peter Hickey","rep":"Ben Averbook","ae":"Mel Fox","product":"Academy","stage":"No Show","amount":11000,"created":"2026-01-15","days":1},{"id":"54956440952","name":"James + Caed","rep":"Adrian Delaney","ae":"Preston Palmer","product":"Boardroom","stage":"Closed Won","amount":12000,"created":"2026-01-15","days":0},{"id":"54956750148","name":"Ernest Moore","rep":"Adrian Delaney","ae":"Preston Palmer","product":"Boardroom","stage":"Meeting Scheduled","amount":12000,"created":"2026-01-14","days":0},{"id":"54610065553","name":"Aamer Rehman","rep":"Ben Averbook","ae":"Preston Palmer","product":"Boardroom","stage":"Meeting Completed","amount":12000,"created":"2026-01-15","days":1},{"id":"54609925754","name":"Mario Gonzalez","rep":"Adrian Delaney","ae":"Dani Ruadez","product":"Boardroom","stage":"Future Opportunity","amount":14000,"created":"2026-01-21","days":0},{"id":"54616291763","name":"Jorge Ibarra","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Boardroom","stage":"Future Opportunity","amount":14000,"created":"2026-01-21","days":2},{"id":"54616110231","name":"Shawn McIntosh","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Boardroom","stage":"Closed Won","amount":12000,"created":"2026-01-14","days":1},{"id":"54609045823","name":"Robert Royer","rep":"Ben Averbook","ae":"Alex Chavez","product":"Boardroom","stage":"No Show","amount":12000,"created":"2026-01-15","days":1},{"id":"54323100852","name":"Thomas Landry","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Boardroom","stage":"Future Opportunity","amount":12000,"created":"2026-01-14","days":3},{"id":"54322941338","name":"Katerine Bonilla","rep":"Ben Averbook","ae":"Mel Fox","product":"Boardroom","stage":"No Show","amount":12000,"created":"2026-01-14","days":1},{"id":"54322896799","name":"Demetrios Kekempanos","rep":"Ben Averbook","ae":"Dani Ruadez","product":"Boardroom","stage":"No Show","amount":12000,"created":"2026-01-14","days":1},{"id":"54321336213","name":"Cody Breunig","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Boardroom","stage":"Closed Lost","amount":12000,"created":"2026-01-14","days":0},{"id":"54316609576","name":"Justin Garcia","rep":"Ben Averbook","ae":"Preston Palmer","product":"Boardroom","stage":"No Show","amount":12000,"created":"2026-01-14","days":1},{"id":"54223737522","name":"Sean V","rep":"Adrian Delaney","ae":"Preston Palmer","product":"Boardroom","stage":"Meeting Scheduled","amount":12000,"created":"2026-01-14","days":8},{"id":"54267594077","name":"Prital Shukla","rep":"Ben Averbook","ae":"Alex Chavez","product":"Boardroom","stage":"Closed Lost","amount":12000,"created":"2026-01-14","days":2},{"id":"54223668819","name":"Justin Spaeth","rep":"Ben Averbook","ae":"Dani Ruadez","product":"Boardroom","stage":"Discovery","amount":14000,"created":"2026-01-14","days":28},{"id":"54224054273","name":"Bridget Dennin","rep":"Adrian Delaney","ae":"Dani Ruadez","product":"Boardroom","stage":"Closed Won","amount":12000,"created":"2026-01-14","days":8},{"id":"54078622384","name":"Michael DAgostino","rep":"Adrian Delaney","ae":"Preston Palmer","product":"Boardroom","stage":"Discovery","amount":12000,"created":"2026-01-14","days":1},{"id":"54074161512","name":"Cheri Ferrell","rep":"Ben Averbook","ae":"Alex Chavez","product":"Boardroom","stage":"Closed Lost","amount":12000,"created":"2026-01-15","days":1},{"id":"54010919039","name":"Michael Mehta","rep":"Ben Averbook","ae":"Mel Fox","product":"Boardroom","stage":"Closed Lost","amount":14000,"created":"2026-01-15","days":2},{"id":"54010906197","name":"Antonio Dargham","rep":"Ben Averbook","ae":"Preston Palmer","product":"Boardroom","stage":"Meeting Completed","amount":12000,"created":"2026-01-14","days":1},{"id":"54020397680","name":"Alyssa Swengel","rep":"Adrian Delaney","ae":"Preston Palmer","product":"Boardroom","stage":"No Show","amount":12000,"created":"2026-01-14","days":1},{"id":"53999297913","name":"Vanessa Simkins","rep":"Ben Averbook","ae":"Preston Palmer","product":"Boardroom","stage":"Closed Lost","amount":12000,"created":"2026-01-14","days":11},{"id":"54020210865","name":"Ray Pena","rep":"Ben Averbook","ae":"Preston Palmer","product":"Boardroom","stage":"Discovery","amount":12000,"created":"2026-01-14","days":1},{"id":"53999297554","name":"Kobus le Roux","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Boardroom","stage":"Negotiation","amount":12000,"created":"2026-01-15","days":1},{"id":"53998981415","name":"Todd Hill","rep":"Ben Averbook","ae":"Preston Palmer","product":"Boardroom","stage":"Closed Lost","amount":12000,"created":"2026-01-15","days":4},{"id":"53974127954","name":"Kathleen Driscoll","rep":"Adrian Delaney","ae":"Preston Palmer","product":"Boardroom","stage":"Closed Won","amount":12000,"created":"2026-01-14","days":15},{"id":"53897836820","name":"Mohammed Sayibu","rep":"Ben Averbook","ae":"Dani Ruadez","product":"Boardroom","stage":"Future Opportunity","amount":12000,"created":"2026-01-14","days":10},{"id":"53946436645","name":"Sal Tabuena","rep":"Adrian Delaney","ae":"Dani Ruadez","product":"Boardroom","stage":"Closed Won","amount":12000,"created":"2026-01-14","days":10},{"id":"53887223328","name":"Antarnesha Lopez","rep":"Ben Averbook","ae":"Alex Chavez","product":"Boardroom","stage":"No Show","amount":12000,"created":"2026-01-14","days":1},{"id":"53945818552","name":"Elizabeth Thomas","rep":"Ben Averbook","ae":"Alex Chavez","product":"Boardroom","stage":"No Show","amount":12000,"created":"2026-01-14","days":1},{"id":"53886975621","name":"Stephen Rice","rep":"Ben Averbook","ae":"Alex Chavez","product":"Boardroom","stage":"Closed Won","amount":12000,"created":"2026-01-14","days":0},{"id":"53946433420","name":"Jim Jacobs","rep":"Ben Averbook","ae":"Alex Chavez","product":"Boardroom","stage":"Discovery","amount":12000,"created":"2026-01-14","days":1},{"id":"53886901036","name":"hakon (Mel self-set)","rep":"Mel Fox","ae":"Mel Fox","product":"Boardroom","stage":"Closed Won","amount":12000,"created":"2026-01-14","days":10},{"id":"53821891896","name":"Manuel Russek","rep":"Ben Averbook","ae":"Preston Palmer","product":"Boardroom","stage":"No Show","amount":14000,"created":"2026-01-15","days":1},{"id":"53697310504","name":"Luis Morales Jr","rep":"Ben Averbook","ae":"Mel Fox","product":"Boardroom","stage":"No Show","amount":12000,"created":"2026-01-15","days":1},{"id":"53754293688","name":"Joan Cassidy","rep":"Adrian Delaney","ae":"Dani Ruadez","product":"Boardroom","stage":"Future Opportunity","amount":12000,"created":"2026-01-15","days":1},{"id":"53754349965","name":"Lauren Kaley","rep":"Adrian Delaney","ae":"Mel Fox","product":"Boardroom","stage":"Closed Lost","amount":12000,"created":"2026-01-15","days":11},{"id":"53754346062","name":"Denise Bonet","rep":"Adrian Delaney","ae":"Alex Chavez","product":"Boardroom","stage":"Discovery","amount":12000,"created":"2026-01-15","days":1},{"id":"53697290873","name":"Daniel Tejada","rep":"Ben Averbook","ae":"Dani Ruadez","product":"Boardroom","stage":"No Show","amount":14000,"created":"2026-01-15","days":1},{"id":"53696101917","name":"Rachel Norman","rep":"Adrian Delaney","ae":"Dani Ruadez","product":"Boardroom","stage":"Future Opportunity","amount":17000,"created":"2026-01-15","days":2},{"id":"53500421193","name":"Ryan White","rep":"Adrian Delaney","ae":"Preston Palmer","product":"Boardroom","stage":"Discovery","amount":12000,"created":"2026-01-14","days":1},{"id":"53393758788","name":"Isaac Garcia","rep":"Ben Averbook","ae":"Alex Chavez","product":"Boardroom","stage":"Closed Lost","amount":12000,"created":"2026-01-15","days":1},{"id":"53434908039","name":"Jeremy Barnes","rep":"Adrian Delaney","ae":"Preston Palmer","product":"Boardroom","stage":"No Show","amount":12000,"created":"2026-01-15","days":1},{"id":"53388668811","name":"Clara Della Togna","rep":"Ben Averbook","ae":"Dani Ruadez","product":"Boardroom","stage":"No Show","amount":12000,"created":"2026-01-15","days":1},{"id":"53284644683","name":"Venkatesh Maran","rep":"Ben Averbook","ae":"Dani Ruadez","product":"Boardroom","stage":"Closed Lost","amount":14000,"created":"2026-01-15","days":2},{"id":"53284625839","name":"Susan Mansfield","rep":"Ben Averbook","ae":"Dani Ruadez","product":"Boardroom","stage":"No Show","amount":12000,"created":"2026-01-15","days":1},{"id":"53353493777","name":"Patrick Conrad","rep":"Ben Averbook","ae":"Mel Fox","product":"Boardroom","stage":"Closed Lost","amount":12000,"created":"2026-01-15","days":0},{"id":"52994278284","name":"Jack Barnett","rep":"Ben Averbook","ae":"Preston Palmer","product":"Boardroom","stage":"Future Opportunity","amount":12000,"created":"2026-01-15","days":21},{"id":"BEN-GAW-1","name":"GAW - Salary Bump","rep":"Ben Averbook","ae":"Ben Averbook","product":"GAW","stage":"Closed Won","amount":2750,"created":"2026-01-07","days":23},{"id":"BEN-GAW-2","name":"GAW - Kari Kinsey","rep":"Ben Averbook","ae":"Ben Averbook","product":"GAW","stage":"Closed Won","amount":4500,"created":"2026-01-28","days":2},{"id":"BEN-GAW-3","name":"GAW - Tom Chandler","rep":"Ben Averbook","ae":"Ben Averbook","product":"GAW","stage":"Closed Won","amount":2500,"created":"2026-01-05","days":25},{"id":"BEN-PM-1","name":"Freddy Rojas (Dec set)","rep":"Ben Averbook","ae":"Mel Fox","product":"Academy","stage":"Closed Won","amount":9600,"created":"2025-12-10","days":51}];
+
+        class Dashboard {
+            constructor(data) {
+                this.rawData = data;
+                this.filteredData = data;
+                this.charts = {};
+                this.sortCol = 'amount';
+                this.sortDir = 'desc';
+                this.init();
+            }
+
+            init() {
+                this.renderKPIs();
+                this.renderBDRCards();
+                this.renderAECards();
+                this.renderCharts();
+                this.renderTable();
+            }
+
+            applyFilters() {
+                const bdr = document.getElementById('filter-bdr').value;
+                const ae = document.getElementById('filter-ae').value;
+                const product = document.getElementById('filter-product').value;
+                const stage = document.getElementById('filter-stage').value;
+
+                this.filteredData = this.rawData.filter(row => {
+                    if (bdr !== 'all' && row.rep !== bdr) return false;
+                    if (ae !== 'all' && row.ae !== ae) return false;
+                    if (product !== 'all' && row.product !== product) return false;
+                    if (stage !== 'all' && row.stage !== stage) return false;
+                    return true;
+                });
+
+                this.renderKPIs();
+                this.renderBDRCards();
+                this.renderAECards();
+                this.updateCharts();
+                this.renderTable();
+            }
+
+            renderKPIs() {
+                const data = this.filteredData;
+                const meetings = data.length;
+                const closedWon = data.filter(d => d.stage === 'Closed Won');
+                const revenue = closedWon.reduce((sum, d) => sum + d.amount, 0);
+                const noShows = data.filter(d => d.stage === 'No Show').length;
+                const showRate = meetings > 0 ? ((meetings - noShows) / meetings * 100) : 0;
+                const closeRate = meetings > 0 ? (closedWon.length / meetings * 100) : 0;
+                const avgDeal = closedWon.length > 0 ? revenue / closedWon.length : 0;
+
+                const activeStages = ['Meeting Scheduled', 'Meeting Completed', 'Discovery', 'Negotiation', 'Commit'];
+                const activeDeals = data.filter(d => activeStages.includes(d.stage));
+                const pipelineValue = activeDeals.reduce((sum, d) => sum + d.amount, 0);
+
+                document.getElementById('total-revenue').textContent = '$' + revenue.toLocaleString();
+                document.getElementById('kpi-meetings').textContent = meetings;
+                document.getElementById('kpi-deals-won').textContent = closedWon.length;
+                document.getElementById('kpi-revenue').textContent = '$' + revenue.toLocaleString();
+                document.getElementById('kpi-show-rate').textContent = showRate.toFixed(0) + '%';
+                document.getElementById('kpi-no-shows').textContent = noShows + ' no shows';
+                document.getElementById('kpi-close-rate').textContent = closeRate.toFixed(1) + '%';
+                document.getElementById('kpi-avg-deal').textContent = '$' + avgDeal.toLocaleString(undefined, {maximumFractionDigits: 0});
+                document.getElementById('kpi-pipeline').textContent = '$' + (pipelineValue/1000).toFixed(0) + 'K';
+                document.getElementById('kpi-active').textContent = activeDeals.length + ' deals';
+            }
+
+            renderBDRCards() {
+                const bdrs = [
+                    {name: 'Ben Averbook', prefix: 'ben'},
+                    {name: 'Adrian Delaney', prefix: 'adrian'},
+                    {name: 'Mel Fox', prefix: 'mel'}
+                ];
+
+                bdrs.forEach(({name, prefix}) => {
+                    const bdrData = this.filteredData.filter(d => d.rep === name);
+                    const meetings = bdrData.length;
+                    const noShows = bdrData.filter(d => d.stage === 'No Show').length;
+                    const showRate = meetings > 0 ? ((meetings - noShows) / meetings * 100) : 0;
+                    const closedWon = bdrData.filter(d => d.stage === 'Closed Won');
+                    const revenue = closedWon.reduce((sum, d) => sum + d.amount, 0);
+                    const closeRate = meetings > 0 ? (closedWon.length / meetings * 100) : 0;
+
+                    document.getElementById(prefix + '-meetings').textContent = meetings;
+                    document.getElementById(prefix + '-show-rate').textContent = showRate.toFixed(0) + '%';
+                    document.getElementById(prefix + '-won').textContent = closedWon.length;
+                    document.getElementById(prefix + '-close-rate').textContent = closeRate.toFixed(0) + '%';
+                    document.getElementById(prefix + '-revenue').textContent = '$' + revenue.toLocaleString();
+
+                    ['Academy', 'Boardroom', 'GAW'].forEach(product => {
+                        const el = document.getElementById(prefix + '-' + product.toLowerCase());
+                        if (el) {
+                            const productRev = bdrData.filter(d => d.product === product && d.stage === 'Closed Won').reduce((sum, d) => sum + d.amount, 0);
+                            el.textContent = '$' + productRev.toLocaleString();
+                        }
+                    });
+                });
+            }
+
+            renderAECards() {
+                const aes = ['Mel Fox', 'Preston Palmer', 'Dani Ruadez', 'Alex Chavez'];
+                const completedStages = ['Discovery', 'Negotiation', 'Commit', 'Closed Won', 'Closed Lost', 'Meeting Completed', 'Future Opportunity'];
+
+                aes.forEach(ae => {
+                    const key = ae.split(' ')[0].toLowerCase();
+                    const aeData = this.filteredData.filter(d => d.ae === ae);
+                    const assigned = aeData.length;
+                    const completed = aeData.filter(d => completedStages.includes(d.stage)).length;
+                    const won = aeData.filter(d => d.stage === 'Closed Won').length;
+                    const rev = aeData.filter(d => d.stage === 'Closed Won').reduce((sum, d) => sum + d.amount, 0);
+
+                    document.getElementById('ae-' + key + '-assigned').textContent = assigned;
+                    document.getElementById('ae-' + key + '-completed').textContent = completed;
+                    document.getElementById('ae-' + key + '-won').textContent = won;
+                    document.getElementById('ae-' + key + '-rev').textContent = '$' + rev.toLocaleString();
+                });
+            }
+
+            renderCharts() {
+                this.renderStageChart();
+                this.renderProductChart();
+                this.renderBDRChart();
+                this.renderAEChart();
+            }
+
+            renderStageChart() {
+                const stages = {};
+                this.filteredData.forEach(d => { stages[d.stage] = (stages[d.stage] || 0) + 1; });
+                const ctx = document.getElementById('stage-chart').getContext('2d');
+                this.charts.stage = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(stages),
+                        datasets: [{
+                            data: Object.values(stages),
+                            backgroundColor: ['#22c55e', '#ef4444', '#fbbf24', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#64748b'],
+                            borderRadius: 4
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } }
+                });
+            }
+
+            renderProductChart() {
+                const products = ['Academy', 'Boardroom', 'GAW'];
+                const revenues = products.map(p => this.filteredData.filter(d => d.product === p && d.stage === 'Closed Won').reduce((sum, d) => sum + d.amount, 0));
+                const ctx = document.getElementById('product-chart').getContext('2d');
+                this.charts.product = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: products,
+                        datasets: [{ data: revenues, backgroundColor: ['#10b981', '#f59e0b', '#ec4899'], borderWidth: 2 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right' } } }
+                });
+            }
+
+            renderBDRChart() {
+                const bdrs = ['Ben Averbook', 'Adrian Delaney', 'Mel Fox'];
+                const revenues = bdrs.map(b => this.filteredData.filter(d => d.rep === b && d.stage === 'Closed Won').reduce((sum, d) => sum + d.amount, 0));
+                const ctx = document.getElementById('bdr-chart').getContext('2d');
+                this.charts.bdr = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Ben', 'Adrian', 'Mel'],
+                        datasets: [{ label: 'Revenue', data: revenues, backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899'], borderRadius: 4 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+            }
+
+            renderAEChart() {
+                const aes = ['Mel Fox', 'Preston Palmer', 'Dani Ruadez', 'Alex Chavez'];
+                const assigned = aes.map(ae => this.filteredData.filter(d => d.ae === ae).length);
+                const won = aes.map(ae => this.filteredData.filter(d => d.ae === ae && d.stage === 'Closed Won').length);
+                const ctx = document.getElementById('ae-chart').getContext('2d');
+                this.charts.ae = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Mel', 'Preston', 'Dani', 'Alex'],
+                        datasets: [
+                            { label: 'Assigned', data: assigned, backgroundColor: '#94a3b8' },
+                            { label: 'Closed Won', data: won, backgroundColor: '#22c55e' }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+
+            updateCharts() {
+                Object.values(this.charts).forEach(c => c.destroy());
+                this.charts = {};
+                this.renderCharts();
+            }
+
+            renderTable() {
+                const tbody = document.getElementById('deals-tbody');
+                let sorted = [...this.filteredData].sort((a, b) => {
+                    let aVal = a[this.sortCol], bVal = b[this.sortCol];
+                    if (this.sortCol === 'amount') { aVal = Number(aVal); bVal = Number(bVal); }
+                    const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+                    return this.sortDir === 'asc' ? cmp : -cmp;
+                });
+
+                tbody.innerHTML = sorted.map(d => {
+                    const stageClass = d.stage.toLowerCase().replace(/ /g, '-');
+                    const repClass = d.rep === 'Ben Averbook' ? 'ben' : d.rep === 'Adrian Delaney' ? 'adrian' : 'mel';
+                    const productClass = d.product.toLowerCase();
+                    const aeClass = 'ae-' + d.ae.split(' ')[0].toLowerCase();
+                    return `<tr>
+                        <td>${d.name}</td>
+                        <td><span class="badge ${repClass}">${d.rep.split(' ')[0]}</span></td>
+                        <td><span class="badge ${aeClass}">${d.ae.split(' ')[0]}</span></td>
+                        <td><span class="badge ${productClass}">${d.product}</span></td>
+                        <td><span class="badge ${stageClass}">${d.stage}</span></td>
+                        <td>$${d.amount.toLocaleString()}</td>
+                    </tr>`;
+                }).join('');
+            }
+
+            sortTable(col) {
+                if (this.sortCol === col) { this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'; }
+                else { this.sortCol = col; this.sortDir = 'desc'; }
+                this.renderTable();
+            }
+        }
+
+        const dashboard = new Dashboard(DATA);
+    </script>
+</body>
+</html>
